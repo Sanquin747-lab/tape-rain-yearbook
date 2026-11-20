@@ -3,7 +3,7 @@ const monthOrder = [...new Set(works.map(work => work.period))].reverse();
 const periodLabel = period => period.slice(0, 4) + ' 年 ' + Number(period.slice(5)) + ' 月';
 let month = '';
 const selected = [
-  { id: 37, title: '《红色沙漠》评测' },
+  { id: 37, titlePhrases: ['8.0|我通关了，', '但我好像只玩了三分之一？', '《红色沙漠》评测 【UCG】'] },
   { personalUrl: 'https://www.bilibili.com/video/BV1WJJpzqETV/', cover: 'covers/BV1WJJpzqETV.jpg' },
   { id: 47, title: '新月的回忆珍藏于此!《新月同行美术设定集》' },
   { id: 64, title: '不出正作的《恶魔城》，日子居然越来越好了？' },
@@ -101,10 +101,12 @@ function featureCard(item) {
   const work = works.find(entry => entry.id === item.id);
   const personal = item.personalUrl && personalAccount.videos.find(video => video.url === item.personalUrl);
   const cover = work ? sourceFor(work).localCover : item.cover;
-  const title = work ? item.title : personal.title;
+  const title = item.titlePhrases
+    ? item.titlePhrases.map(phrase => `<span class="title-phrase">${esc(phrase)}</span>`).join('')
+    : esc(work ? item.title : personal.title);
   const content = `<div class="cover has-image"><img src="${esc(cover)}" alt="" loading="lazy"></div>
     <div class="feature-meta">${work ? esc(work.type) : '个人视频'}</div>
-    <h3>${esc(title)}</h3>
+    <h3>${title}</h3>
     <p class="feature-credit">${work ? '<span>参与</span>' + esc(work.credit.replaceAll('/', ' · ')) : esc(personalAccount.name) + ' · B站个人账号 ↗'}</p>`;
   if (personal) return `<a class="feature" href="${esc(personal.url)}" target="_blank" rel="noopener noreferrer">${content}</a>`;
   return `<button class="feature" data-id="${work.id}">${content}</button>`;

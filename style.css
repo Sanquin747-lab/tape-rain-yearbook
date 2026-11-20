@@ -76,6 +76,7 @@ button,summary,a,select,input {touch-action:manipulation}
 .feature-meta {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:10px 0 4px;font:12px/1.5 var(--mono);color:var(--muted)}
 .feature h3 {font:700 clamp(17px,1.4vw,21px)/1.45 var(--serif);margin:0 0 4px}
 .feature:first-child h3 {font-size:clamp(24px,2.6vw,37px);max-width:28em}
+.title-phrase {display:inline-block;max-width:100%}
 .feature:hover h3,.entry:hover h3 {text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:5px}
 .feature-credit {font-size:13px;margin:0;color:var(--muted)}
 .feature-credit span {margin-right:6px}
