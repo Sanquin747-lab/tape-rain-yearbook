@@ -892,6 +892,148 @@ const shortVideoData = {
           }
         }
       ]
+    },
+    {
+      "row": 535,
+      "workIds": [
+        90,
+        91
+      ],
+      "title": "系列最佳战役有力竞争者？《战争机器：事变日》战役模式评测",
+      "publishedDate": "2026-10-01",
+      "platforms": [
+        {
+          "name": "抖音",
+          "stats": {
+            "view": 6918,
+            "like": 63,
+            "reply": 5,
+            "share": 15
+          }
+        },
+        {
+          "name": "小红书",
+          "stats": {
+            "view": 3659,
+            "reply": 17,
+            "share": 27
+          }
+        },
+        {
+          "name": "视频号",
+          "stats": {
+            "view": 4634,
+            "reply": 3,
+            "share": 33
+          }
+        }
+      ]
+    },
+    {
+      "row": 541,
+      "workIds": [
+        95
+      ],
+      "title": "游戏机为什么曾经流行“裸奔”？【UCG】",
+      "publishedDate": "2026-10-15",
+      "platforms": [
+        {
+          "name": "抖音",
+          "stats": {
+            "view": 2095,
+            "like": 31,
+            "reply": 0,
+            "share": 2
+          }
+        },
+        {
+          "name": "小红书",
+          "stats": {
+            "view": 1361,
+            "reply": 1,
+            "share": 0
+          }
+        },
+        {
+          "name": "视频号",
+          "stats": {
+            "view": 4420,
+            "reply": 8,
+            "share": 31
+          }
+        }
+      ]
+    },
+    {
+      "row": 545,
+      "workIds": [
+        100
+      ],
+      "title": "9.3|酣畅淋漓 意犹未尽《影之刃零》评测【UCG】",
+      "publishedDate": "2026-10-26",
+      "platforms": [
+        {
+          "name": "抖音",
+          "stats": {
+            "view": 869400,
+            "like": 3028,
+            "reply": 311,
+            "share": 1461
+          }
+        },
+        {
+          "name": "小红书",
+          "stats": {
+            "view": 3884,
+            "reply": 7,
+            "share": 29
+          }
+        },
+        {
+          "name": "视频号",
+          "stats": {
+            "view": 67000,
+            "reply": 15,
+            "share": 169
+          }
+        }
+      ]
+    },
+    {
+      "row": 547,
+      "workIds": [
+        101
+      ],
+      "title": "《影之刃零》无剧透上手指南【UCG】",
+      "publishedDate": "2026-10-31",
+      "platforms": [
+        {
+          "name": "抖音",
+          "stats": {
+            "view": null,
+            "like": 15,
+            "reply": 2,
+            "share": 0
+          },
+          "viewNote": "平台限流"
+        },
+        {
+          "name": "小红书",
+          "stats": {
+            "view": 1463,
+            "reply": 2,
+            "share": 4
+          }
+        },
+        {
+          "name": "视频号",
+          "stats": {
+            "view": 40000,
+            "reply": 8,
+            "share": 76
+          }
+        }
+      ]
     }
   ]
 };

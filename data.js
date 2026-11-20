@@ -81,5 +81,47 @@ const raw = `9/02|直播|战争机器 重装上阵
 8/20|直播|仁王3 DLC
 8/22|图文|[商单] 《绝地潜兵2》大更新
 8/27|直播|我不是魔王 & 未来游戏展 重播
-8/31|图文|[商单] 《黎明行者之血》`;
-const works=raw.split('\n').map((line,id)=>{const [date,credit,...rest]=line.split('|');const original=rest.join('|'), commercial=original.includes('[商单]'),title=original.replace('[商单] ','');const [month,day]=date.split('/').map(Number);let type=credit==='直播'?'直播':/采访|专访|周年问题/.test(title)?'采访':/评测|试玩|体验报告/.test(title)?'评测与试玩':/图文/.test(credit)?'图文':/视频|配音/.test(title+credit)?'视频':'策划与其他';return {id,date,month,day,credit,title,commercial,type,original:line};}).sort((a,b)=>((a.month+3)%12-(b.month+3)%12)||a.day-b.day||a.id-b.id);
+8/31|图文|[商单] 《黎明行者之血》
+2026-09-01|直播|[商单] 神盾力量
+2026-09-08|直播|星球大战零号连战（PS5）
+2026-09-11|提案|硬件评测
+2026-09-14|图文|异形又回来了！《异形：隔离2》科隆试玩报告【UCG】
+2026-09-15|直播|[商单] 漫威金刚狼
+2026-09-21|图文|熟悉的战争，新的选择《现代战争4》开发组访谈
+2026-09-30|文案/素材/图文|《战争机器：事变日》评测
+2026-10-01|文案/素材/图文|《战争机器：事变日》评测
+2026-10-01|文案|Redland《巫师3》采访
+2026-10-08|提案|GameHalo 运营/内容征集
+2026-10-10|校对|GameHalo 网站
+2026-10-14|文案/素材/分镜/拍摄|[商单] 游戏机为什么曾经流行“裸奔”？（ROG植入）
+2026-10-14|完整策划案/设计|GameHalo 每周神评论＋评分引导板块
+2026-10-15|直播|空戰奇兵8 希孚之翼（PS5）
+2026-10-16|文案|小米VGT采访问题
+2026-10-22|直播|欢迎来到古原镇
+2026-10-26|配音|影之刃评测
+2026-10-31|文案/分镜/拍摄/对接|[商单] 海信电视影之刃上手指南
+`.trim();
+
+const works = raw.split('\n').map((line, id) => {
+  const [date, credit, ...rest] = line.split('|');
+  const original = rest.join('|');
+  const commercial = original.includes('[商单]');
+  const title = original.replace('[商单] ', '');
+  const extendedDate = date.includes('-');
+  const parts = date.split(extendedDate ? '-' : '/').map(Number);
+  const [month, day] = extendedDate ? parts.slice(1) : parts;
+  const year = extendedDate ? parts[0] : month >= 9 ? 2025 : 2026;
+  const period = year + '-' + String(month).padStart(2, '0');
+  let type = '策划与其他';
+  if (credit === '直播') type = '直播';
+  else if (/采访|访谈|专访|周年问题/.test(title)) type = '采访';
+  else if (!/提案|校对|策划案/.test(credit) && /评测|试玩|体验报告/.test(title)) type = '评测与试玩';
+  else if (/图文/.test(credit)) type = '图文';
+  else if (/视频|配音|拍摄/.test(title + credit)) type = '视频';
+  if (!extendedDate) {
+    type = credit === '直播' ? '直播' : /采访|专访|周年问题/.test(title) ? '采访' :
+      /评测|试玩|体验报告/.test(title) ? '评测与试玩' : /图文/.test(credit) ? '图文' :
+      /视频|配音/.test(title + credit) ? '视频' : '策划与其他';
+  }
+  return {id, date: extendedDate ? month + '/' + day : date, year, period, month, day, credit, title, commercial, type, original:line};
+}).sort((a, b) => a.period.localeCompare(b.period) || a.day - b.day || a.id - b.id);

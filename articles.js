@@ -624,6 +624,137 @@ const articleData = {
           "url": "https://www.ucg.cn/newsinfo/11310535.html"
         }
       ]
+    },
+    {
+      "row": 500,
+      "workIds": [
+        87
+      ],
+      "title": "异形又回来了！《异形：隔离2》科隆试玩报告【UCG】",
+      "publishedDate": "2026-09-14",
+      "platforms": [
+        {
+          "name": "B站",
+          "read": 38000
+        },
+        {
+          "name": "微博",
+          "read": 24000
+        },
+        {
+          "name": "公众号",
+          "read": 435
+        },
+        {
+          "name": "小黑盒",
+          "read": 248
+        }
+      ]
+    },
+    {
+      "row": 512,
+      "workIds": [
+        89
+      ],
+      "title": "熟悉的战争，新的选择《现代战争4》开发组访谈",
+      "publishedDate": "2026-09-21",
+      "platforms": [
+        {
+          "name": "B站",
+          "read": 36000
+        },
+        {
+          "name": "微博",
+          "read": 13000
+        },
+        {
+          "name": "公众号",
+          "read": 341
+        },
+        {
+          "name": "小黑盒",
+          "read": 1
+        }
+      ]
+    },
+    {
+      "row": 526,
+      "workIds": [
+        90,
+        91
+      ],
+      "title": "9|系列最佳战役有力竞争者？《战争机器：事变日》战役模式评测【UCG】",
+      "publishedDate": "2026-10-01",
+      "platforms": [
+        {
+          "name": "B站",
+          "read": 48000
+        },
+        {
+          "name": "微博",
+          "read": 21000
+        },
+        {
+          "name": "公众号",
+          "read": 1206
+        },
+        {
+          "name": "小黑盒",
+          "read": 195
+        }
+      ]
+    },
+    {
+      "row": 534,
+      "workIds": [
+        92
+      ],
+      "title": "杰洛特归来！带着更多的诚意：《巫师3》重制版与《旧时曲》制作组专访【UCG】",
+      "publishedDate": "2026-10-10",
+      "platforms": [
+        {
+          "name": "B站",
+          "read": 32000
+        },
+        {
+          "name": "微博",
+          "read": 17000
+        },
+        {
+          "name": "公众号",
+          "read": 553
+        },
+        {
+          "name": "小黑盒",
+          "read": 176
+        }
+      ]
+    },
+    {
+      "row": 550,
+      "workIds": [
+        100
+      ],
+      "title": "9.3|酣畅淋漓 意犹未尽《影之刃 零》评测|UCG",
+      "publishedDate": "2026-10-26",
+      "platforms": [
+        {
+          "name": "B站",
+          "read": 51000
+        },
+        {
+          "name": "微博",
+          "read": 29000
+        },
+        {
+          "name": "公众号",
+          "read": 2520
+        },
+        {
+          "name": "小黑盒",
+          "read": 7178
+        }
+      ]
     }
   ]
 };
