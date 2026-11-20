@@ -2,7 +2,14 @@ const $=s=>document.querySelector(s), esc=s=>String(s).replace(/[&<>"']/g,c=>({'
 const monthOrder = [...new Set(works.map(work => work.period))].reverse();
 const periodLabel = period => period.slice(0, 4) + ' 年 ' + Number(period.slice(5)) + ' 月';
 let month = '';
-const selected=[{"id":37,"label":"8.0|我通关了，但我好像只玩了三分之一？《红色沙漠》评测 【UCG】","sub":"MOST WATCHED","color":""},{"id":47,"label":"新月同行 出版物视频","sub":"MOST WATCHED","color":""},{"id":15,"label":"海信双11视频","sub":"MOST WATCHED","color":""},{"id":64,"label":"恶魔城","sub":"VIDEO PRODUCTION","color":"purple-cover"},{"id":55,"label":"黑旗 · 采访","sub":"INTERVIEW / ARTICLE","color":""},{"id":75,"label":"纸页之外","sub":"UCG / UNBOXING","color":"light-cover"}];
+const selected = [
+  { id: 37, title: '《红色沙漠》评测：我通关了，但我好像只玩了三分之一？' },
+  { id: 47, title: '《新月同行》美术设定集' },
+  { id: 15, title: '海信电视双十一体验' },
+  { id: 64, title: '不出正作的《恶魔城》，日子居然越来越好了？' },
+  { id: 55, title: '《刺客信条：黑旗 记忆重置》制作人采访' },
+  { id: 75, title: '《游戏机实用技术》开箱' }
+];
 const number=n=>Number(n).toLocaleString('zh-CN');
 const compact=n=>n>=10000?(n/10000).toFixed(1)+' 万':number(n);
 function sourceFor(w){return w.links.map(url=>workMetadata[url]).find(m=>m?.status==='ok'&&m.kind==='video')||w.links.map(url=>workMetadata[url]).find(m=>m?.status==='ok')}
@@ -91,15 +98,85 @@ $('.combined-summary p').remove();
 $('.combined-summary small').textContent='B站视频播放、短视频播放、直播观看与文章阅读合计。按作品及平台累计，同一作品多项分工只计一次。非独立访客数。';
 
 $('#total').textContent=works.length;
-$('#features').innerHTML=selected.map((s,index)=>{const w=works.find(w=>w.id===s.id);return `<button class="feature" data-id="${w.id}"><div class="cover ${s.color} ${sourceFor(w)?.localCover?'has-image':''}">${sourceFor(w)?.localCover?`<img src="${esc(sourceFor(w).localCover)}" alt="${esc(w.title)}封面" loading="lazy" onerror="this.parentElement.classList.remove('has-image');this.remove()">`:''}<span>磁带雨 / 年度选集 <b>${w.date}</b></span><strong>${esc(s.label).replace(/\n/g,'<br>')}</strong><em>${s.sub}</em></div><div class="feature-meta"><span>${index<3?`首年 B站播放 TOP ${index+1} · `:''}${esc(w.type)} / ${w.date}</span>${index<3&&sourceFor(w)?.stats?.view!=null?`<b>${compact(sourceFor(w).stats.view)} ${sourceFor(w).kind==='video'?'播放':'阅读'}</b>`:''}</div><h3>${esc(w.title)}</h3><p class="feature-credit"><span>参与分工</span> ${esc(w.credit.replaceAll('/',' · '))}</p></button>`}).join('');
-for(const type of [...new Set(works.map(w=>w.type))])$('#type').add(new Option(type,type));
+function featureCard(item, index) {
+  const work = works.find(entry => entry.id === item.id);
+  const source = sourceFor(work);
+  const ranking = index < 3 ? `首年播放第 ${index + 1} 名` : work.type;
+  const views = index < 3 && source?.stats?.view != null
+    ? `<b>${compact(source.stats.view)} 播放</b>` : '';
+  return `<button class="feature" data-id="${work.id}">
+    <div class="cover has-image"><img src="${esc(source.localCover)}" alt="" loading="lazy"></div>
+    <div class="feature-meta"><span>${esc(ranking)}</span>${views}</div>
+    <h3>${esc(item.title)}</h3>
+    <p class="feature-credit"><span>参与</span>${esc(work.credit.replaceAll('/', ' · '))}</p>
+  </button>`;
+}
 
-$('#months').innerHTML='<button class="active" data-month="" aria-pressed="true">全部月份</button>'+monthOrder.map(m=>`<button data-month="${m}" aria-pressed="false">${m.replace('-', '/')}</button>`).join('');
-function render(){const query=$('#search').value.trim().toLowerCase(),type=$('#type').value,platform=$('#platform').value,commercial=$('#commercial').value;const result=works.filter(w=>(!month||w.period===month)&&(!query||(w.title+' '+w.credit).toLowerCase().includes(query))&&(!type||w.type===type)&&(!platform||(platform==='short'?shortVideosFor(w).length>0:(w.links.some(url=>new URL(url).hostname==='www.bilibili.com') || videoRowsFor(w).some(row=>row.platforms.some(p=>p.name==='B站'&&p.stats.view!=null)) || articlesFor(w).some(row=>row.platforms.some(p=>p.name==='B站'&&p.read!=null)))))&&(!commercial||w.commercial===(commercial==='yes')));$('#result-count').textContent=`${result.length} 项作品 / 全部 ${works.length} 项`;$('#entries').innerHTML=result.length?monthOrder.map(m=>{const group=result.filter(w=>w.period===m);return group.length?`<h3 class="month-heading">${periodLabel(m)}<span>${group.length} WORKS</span></h3>`+group.map(w=>`<button class="entry" data-id="${w.id}"><time>${String(w.month).padStart(2,'0')}/${String(w.day).padStart(2,'0')}</time><div><h3>${esc(w.title)}${w.commercial?'<span class="badge">商单</span>':''}</h3><p class="entry-credit">${esc(w.credit.replaceAll('/',' · '))}</p></div><span class="entry-data"><span class="category">${esc(w.type)}</span><span class="entry-stats">${platform==='short'?shortSideStats(w):(w.type==='直播'?(liveStats(w)||'—'):(shortStats(w)||'—'))}</span></span><span class="entry-action"><span class="link-availability">${linkAvailability(w)}${douyinFor(w).length?' · 抖音':''}</span><span class="arrow" aria-hidden="true">↗</span></span></button>`).join(''):''}).join(''):'<p class="empty">没有找到匹配的作品。试试其他关键词，或重置筛选。</p>'}
+$('#features').innerHTML = selected.map(featureCard).join('');
+for (const type of new Set(works.map(work => work.type))) {
+  $('#type').add(new Option(type, type));
+}
+
+$('#month-select').add(new Option('全部月份', ''));
+for (const period of monthOrder) {
+  $('#month-select').add(new Option(periodLabel(period), period));
+}
+$('#months').innerHTML = '<button class="active" data-month="" aria-pressed="true">全部月份</button>' +
+  monthOrder.map(period => `<button data-month="${period}" aria-pressed="false">${period.replace('-', '/')}</button>`).join('');
+$('#month-select').addEventListener('change', event => {
+  document.querySelector(`[data-month="${event.target.value}"]`).click();
+});
+
+function hasBiliData(work) {
+  return work.links.some(url => new URL(url).hostname === 'www.bilibili.com') ||
+    videoRowsFor(work).some(row => row.platforms.some(p => p.name === 'B站' && p.stats.view != null)) ||
+    articlesFor(work).some(row => row.platforms.some(p => p.name === 'B站' && p.read != null));
+}
+
+function entryMarkup(work, platform) {
+  const stats = platform === 'short' ? shortSideStats(work) :
+    work.type === '直播' ? liveStats(work) : shortStats(work);
+  const date = work.period + '-' + String(work.day).padStart(2, '0');
+  return `<button class="entry" data-id="${work.id}">
+    <time datetime="${date}">${date.slice(5).replace('-', '/')}</time>
+    <div><h3>${esc(work.title)}${work.commercial ? '<span class="badge">商单</span>' : ''}</h3>
+      <p class="entry-credit">${esc(work.credit.replaceAll('/', ' · '))}</p></div>
+    <span class="entry-data"><span class="category">${esc(work.type)}</span><span class="entry-stats">${esc(stats || '—')}</span></span>
+    <span class="entry-action"><span class="link-availability">查看记录</span><span class="arrow" aria-hidden="true">↗</span></span>
+  </button>`;
+}
+
+function render() {
+  const query = $('#search').value.trim().toLowerCase();
+  const type = $('#type').value;
+  const platform = $('#platform').value;
+  const commercial = $('#commercial').value;
+  const filtering = Boolean(month || query || type || platform || commercial);
+  const matches = works.filter(work => {
+    if (month && work.period !== month) return false;
+    if (query && !(work.title + ' ' + work.credit).toLowerCase().includes(query)) return false;
+    if (type && work.type !== type) return false;
+    if (platform === 'short' && shortVideosFor(work).length === 0) return false;
+    if (platform === 'bilibili' && !hasBiliData(work)) return false;
+    return !commercial || work.commercial === (commercial === 'yes');
+  });
+  $('#month-select').value = month;
+  $('#result-count').textContent = filtering ? `找到 ${matches.length} 项，共 ${works.length} 项` : `共 ${works.length} 项工作记录`;
+  $('#reset').disabled = !filtering;
+  const groups = monthOrder.map(period => ({
+    period, records: matches.filter(work => work.period === period)
+  })).filter(group => group.records.length);
+  $('#entries').innerHTML = groups.map(({period, records}, index) => `
+    <details class="archive-month" ${filtering || index === 0 ? 'open' : ''}>
+      <summary class="month-heading">${periodLabel(period)} <span>${records.length} 项</span></summary>
+      ${records.map(work => entryMarkup(work, platform)).join('')}
+    </details>`).join('') || '<p class="empty">没有找到匹配的作品。试试其他关键词，或重置筛选。</p>';
+}
+
 function linkLabel(url,w){return url.includes('/opus/')?'阅读图文':w.type==='直播'?'观看直播回放':'观看视频'}
 function linkAvailability(w){return w.links.length ? [...new Set(w.links.map(url=>url.includes('/opus/')?'图文':'视频'))].join(' / ')+' ↗' : '链接未收录'}
 function topic(w){return /黑旗/.test(w.title)?'黑旗':/PUBG/.test(w.title)?'PUBG':/消光困兽/.test(w.title)?'消光困兽':/红色沙漠/.test(w.title)?'红色沙漠':/11bit/.test(w.title)?'11bit':/ARC GAMES/.test(w.title)?'ARC GAMES':null}
-function detail(id){const w=works.find(w=>w.id===Number(id));if(!w)return;const key=topic(w),related=key?works.filter(x=>x.id!==w.id&&topic(x)===key):[];$('#detail-content').innerHTML=`<div class="detail-meta">${w.date} / ${esc(w.type)}${w.commercial?' / 商单':''}</div><h2>${esc(w.title)}</h2><div class="work-links">${w.links.map(url=>`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${linkLabel(url,w)} <span aria-hidden="true">↗</span><small>哔哩哔哩 · 新标签页打开</small></a>`).join('')}</div>${douyinButtons(w)}<dl><dt>我的分工</dt><dd>${esc(w.credit.replaceAll('/',' · '))}</dd><dt>归档日期</dt><dd>${w.year} 年 ${w.month} 月 ${w.day} 日</dd></dl>${articlePanel(w)}${w.type==='直播'?livePanel(w):metadataPanel(w)+videoSheetPanel(w)}${shortVideosFor(w).length?shortVideoPanel(w):douyinPanel(w)}${related.length?`<div class="related"><h3>同一专题 · ${key}</h3>${related.map(x=>`<button data-id="${x.id}">${x.date} / ${esc(x.title)}<br><span>${esc(x.credit)}</span></button>`).join('')}</div>`:''}<p class="note">${w.links.length?'作品链接由档案作者提供。':(w.type==='直播'&&!liveFor(w).length?'此场直播暂未收录链接或统计数据。':'此项记录暂未收录作品链接。')}${w.title.includes('等待甲方')?'修改状态保留原清单记录。':''}</p>`;if(!$('#detail').open)$('#detail').showModal();$('#detail').scrollTop=0}
+function detail(id){const w=works.find(w=>w.id===Number(id));if(!w)return;const key=topic(w),related=key?works.filter(x=>x.id!==w.id&&topic(x)===key):[];$('#detail-content').innerHTML=`<div class="detail-meta">${w.date} / ${esc(w.type)}${w.commercial?' / 商单':''}</div><h2 id="detail-title">${esc(w.title)}</h2><div class="work-links">${w.links.map(url=>`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${linkLabel(url,w)} <span aria-hidden="true">↗</span><small>哔哩哔哩 · 新标签页打开</small></a>`).join('')}</div>${douyinButtons(w)}<dl><dt>我的分工</dt><dd>${esc(w.credit.replaceAll('/',' · '))}</dd><dt>归档日期</dt><dd>${w.year} 年 ${w.month} 月 ${w.day} 日</dd></dl>${articlePanel(w)}${w.type==='直播'?livePanel(w):metadataPanel(w)+videoSheetPanel(w)}${shortVideosFor(w).length?shortVideoPanel(w):douyinPanel(w)}${related.length?`<div class="related"><h3>同一专题 · ${key}</h3>${related.map(x=>`<button data-id="${x.id}">${x.date} / ${esc(x.title)}<br><span>${esc(x.credit)}</span></button>`).join('')}</div>`:''}<p class="note">${w.links.length?'作品链接由档案作者提供。':(w.type==='直播'&&!liveFor(w).length?'此场直播暂未收录链接或统计数据。':'此项记录暂未收录作品链接。')}${w.title.includes('等待甲方')?'修改状态保留原清单记录。':''}</p>`;if(!$('#detail').open)$('#detail').showModal();$('#detail').scrollTop=0}
 document.addEventListener('click',e=>{const work=e.target.closest('[data-id]');if(work)detail(work.dataset.id);const m=e.target.closest('[data-month]');if(m){month=m.dataset.month;document.querySelectorAll('[data-month]').forEach(b=>{b.classList.toggle('active',b===m);b.setAttribute('aria-pressed',String(b===m))});render()}});
 $('#search').addEventListener('input',render);['type','platform','commercial'].forEach(id=>$('#'+id).addEventListener('change',render));$('#reset').addEventListener('click',()=>{$('#search').value='';['type','platform','commercial'].forEach(id=>$('#'+id).value='');document.querySelector('[data-month=""]').click()});$('#close').addEventListener('click',()=>$('#detail').close());$('#detail').addEventListener('click',e=>{if(e.target===$('#detail')){const r=$('#detail').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('#detail').close()}});render();
 
@@ -107,3 +184,21 @@ $('#about').insertAdjacentHTML('beforeend',`<div class="personal-account"><div c
 
 const personalLabels={danmaku:'弹幕',like:'点赞',coin:'硬币',favorite:'收藏',share:'分享'};
 $('.personal-account').insertAdjacentHTML('beforeend',`<details class="personal-works overview-fold"><summary><span class="overview-label">个人作品 · ${personalAccount.videos.length} 条</span><span class="overview-toggle" aria-hidden="true"><span class="fold-more">展开 ＋</span><span class="fold-less">收起 −</span></span></summary><div class="overview-body"><div class="personal-video-grid">${personalAccount.videos.map(v=>`<article class="personal-video"><h4><a href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">${esc(v.title)} ↗</a></h4><p class="personal-play">约 ${number(v.viewApprox)} <span>播放</span></p><dl>${Object.entries(personalLabels).map(([k,label])=>`<div><dt>${label}</dt><dd>${number(v[k])}</dd></div>`).join('')}</dl></article>`).join('')}</div><p class="data-time">作品数据由作者提供。播放量由 5.3万、4.7万换算，为约数；两条视频的互动数与账号累计获赞统计范围及采集时间不同，分别展示。</p></div></details>`);
+const navLinks = [...document.querySelectorAll('.bar nav a')];
+const navSections = navLinks.map(link => document.querySelector(link.hash));
+let navFrame = 0;
+function updateNav() {
+  const top = document.querySelector('.masthead').offsetHeight + 28;
+  const current = navSections.filter(section => section.getBoundingClientRect().top <= top).at(-1);
+  navLinks.forEach(link => {
+    if (current && link.hash === '#' + current.id) link.setAttribute('aria-current', 'location');
+    else link.removeAttribute('aria-current');
+  });
+  navFrame = 0;
+}
+function scheduleNav() {
+  if (!navFrame) navFrame = requestAnimationFrame(updateNav);
+}
+window.addEventListener('scroll', scheduleNav, {passive:true});
+window.addEventListener('resize', scheduleNav);
+updateNav();
