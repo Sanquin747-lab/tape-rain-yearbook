@@ -112,16 +112,5 @@ const works = raw.split('\n').map((line, id) => {
   const [month, day] = extendedDate ? parts.slice(1) : parts;
   const year = extendedDate ? parts[0] : month >= 9 ? 2025 : 2026;
   const period = year + '-' + String(month).padStart(2, '0');
-  let type = '策划与其他';
-  if (credit === '直播') type = '直播';
-  else if (/采访|访谈|专访|周年问题/.test(title)) type = '采访';
-  else if (!/提案|校对|策划案/.test(credit) && /评测|试玩|体验报告/.test(title)) type = '评测与试玩';
-  else if (/图文/.test(credit)) type = '图文';
-  else if (/视频|配音|拍摄/.test(title + credit)) type = '视频';
-  if (!extendedDate) {
-    type = credit === '直播' ? '直播' : /采访|专访|周年问题/.test(title) ? '采访' :
-      /评测|试玩|体验报告/.test(title) ? '评测与试玩' : /图文/.test(credit) ? '图文' :
-      /视频|配音/.test(title + credit) ? '视频' : '策划与其他';
-  }
-  return {id, date: extendedDate ? month + '/' + day : date, year, period, month, day, credit, title, commercial, type, original:line};
+  return {id, date: extendedDate ? month + '/' + day : date, year, period, month, day, credit, title, commercial, original:line};
 }).sort((a, b) => a.period.localeCompare(b.period) || a.day - b.day || a.id - b.id);

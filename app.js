@@ -2,6 +2,26 @@ const $=s=>document.querySelector(s), esc=s=>String(s).replace(/[&<>"']/g,c=>({'
 const monthOrder = [...new Set(works.map(work => work.period))].reverse();
 const periodLabel = period => period.slice(0, 4) + ' 年 ' + Number(period.slice(5)) + ' 月';
 let month = '';
+const contentTypes = ['视频', '图文', '直播', '策划'];
+for (const work of works) {
+  const sources = work.links.map(url => workMetadata[url]).filter(Boolean);
+  const videoRows = [...videoRowsFor(work), ...shortVideosFor(work), ...douyinFor(work)];
+  const articleRows = articlesFor(work);
+  const description = work.title + ' ' + work.credit;
+  const types = [];
+  if (work.credit === '直播' || liveFor(work).length) {
+    types.push('直播');
+  } else {
+    if (videoRows.length || sources.some(source => source.kind === 'video') ||
+        work.links.some(url => url.includes('/video/')) || /视频|配音|拍摄|分镜/.test(description)) types.push('视频');
+    if (articleRows.length || sources.some(source => source.kind === 'article') ||
+        work.links.some(url => /\/(opus|read)\//.test(url)) || /图文|公众号|文章/.test(description)) types.push('图文');
+    if (!types.length || /提案|策划案|采访问题|周年问题/.test(description)) types.push('策划');
+  }
+  work.types = types;
+  work.searchText = [work.title, work.credit, ...types, ...[...sources, ...videoRows, ...articleRows].map(row => row.title)]
+    .filter(Boolean).join(' ').toLowerCase();
+}
 const selected = [
   { id: 37, titlePhrases: ['8.0|我通关了，', '但我好像只玩了三分之一？', '《红色沙漠》评测 【UCG】'] },
   { personalUrl: 'https://www.bilibili.com/video/BV1WJJpzqETV/', cover: 'covers/BV1WJJpzqETV.jpg' },
@@ -32,12 +52,22 @@ function videoSheetPanel(work) {
   }).join('');
 }
 
-function shortStats(w){const m=sourceFor(w);if(!m){
-  const plays = videoRowsFor(w).flatMap(row => row.platforms).find(platform => platform.name === 'B站')?.stats.view;
-  if (plays != null) return number(plays) + ' B站播放';
-  const rows = articlesFor(w);
+function shortStats(work, type) {
+  const kind = {'视频':'video', '图文':'article'}[type];
+  const source = kind ? work.links.map(url => workMetadata[url]).find(item => item?.status === 'ok' && item.kind === kind) : sourceFor(work);
+  if (source) {
+    const {view, like} = source.stats || {};
+    return [view != null ? number(view) + (source.kind === 'video' ? ' 播放' : ' 阅读') : source.readLabel,
+      like != null ? number(like) + ' 赞' : null].filter(Boolean).join(' · ');
+  }
+  if (kind !== 'article') {
+    const plays = videoRowsFor(work).flatMap(row => row.platforms).find(platform => platform.name === 'B站')?.stats.view;
+    if (plays != null) return number(plays) + ' B站播放';
+    if (type === '视频') return shortVideosFor(work).length ? shortSideStats(work) : '';
+  }
+  const rows = articlesFor(work);
   return rows.length ? number(articleReads(rows)) + ' 阅读' : '';
-}const v=m.stats?.view;return [v!=null?number(v)+(m.kind==='video'?' 播放':' 阅读'):m.readLabel,m.stats?.like!=null?number(m.stats.like)+' 赞':null].filter(Boolean).join(' · ')}
+}
 function statMarkup(m){const labels={view:m.kind==='video'?'播放':'阅读',like:'点赞',coin:'投币',favorite:'收藏',reply:'评论',danmaku:'弹幕',share:'分享'};return Object.entries(labels).filter(([k])=>m.stats?.[k]!=null).map(([k,label])=>`<div><strong>${number(m.stats[k])}</strong><span>${label}</span></div>`).join('')}
 function douyinFor(w){return douyinWorks.filter(d=>d.workIds.includes(w.id))}
 function douyinButtons(w){return douyinFor(w).map(d=>`<div class="douyin-links"><a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">在抖音观看 ↗<small>抖音 · 新标签页打开</small></a></div>`).join('')}
@@ -105,7 +135,7 @@ function featureCard(item) {
     ? item.titlePhrases.map(phrase => `<span class="title-phrase">${esc(phrase)}</span>`).join('')
     : esc(work ? item.title : personal.title);
   const content = `<div class="cover has-image"><img src="${esc(cover)}" alt="" loading="lazy"></div>
-    <div class="feature-meta">${work ? esc(work.type) : '个人视频'}</div>
+    <div class="feature-meta">${work ? esc(work.types.join(' · ')) : '个人视频'}</div>
     <h3>${title}</h3>
     <p class="feature-credit">${work ? '<span>参与</span>' + esc(work.credit.replaceAll('/', ' · ')) : esc(personalAccount.name) + ' · B站个人账号 ↗'}</p>`;
   if (personal) return `<a class="feature" href="${esc(personal.url)}" target="_blank" rel="noopener noreferrer">${content}</a>`;
@@ -113,13 +143,8 @@ function featureCard(item) {
 }
 
 $('#features').innerHTML = selected.map(featureCard).join('');
-const typeCounts = new Map();
-for (const work of works) {
-  typeCounts.set(work.type, (typeCounts.get(work.type) || 0) + 1);
-}
-const contentsOrder = new Set(['评测与试玩', '采访', '视频', '图文', '直播', '策划与其他', ...typeCounts.keys()]);
-$('#contents-list').innerHTML = [...contentsOrder].filter(type => typeCounts.has(type)).map(type =>
-  `<li><a href="#catalog" data-contents-type="${esc(type)}"><span>${esc(type)}</span><span class="contents-count">${typeCounts.get(type)}</span><span class="contents-arrow" aria-hidden="true">↘</span></a></li>`
+$('#contents-list').innerHTML = contentTypes.map(type =>
+  `<li><a href="#catalog" data-contents-type="${esc(type)}"><span>${esc(type)}</span><span class="contents-count">${works.filter(work => work.types.includes(type)).length}</span><span class="contents-arrow" aria-hidden="true">↘</span></a></li>`
 ).join('');
 $('#contents-list').addEventListener('click', event => {
   const link = event.target.closest('[data-contents-type]');
@@ -129,7 +154,7 @@ $('#contents-list').addEventListener('click', event => {
   render();
   $('#type').focus({preventScroll:true});
 });
-for (const type of new Set(works.map(work => work.type))) {
+for (const type of contentTypes) {
   $('#type').add(new Option(type, type));
 }
 
@@ -149,30 +174,30 @@ function hasBiliData(work) {
     articlesFor(work).some(row => row.platforms.some(p => p.name === 'B站' && p.read != null));
 }
 
-function entryMarkup(work, platform) {
+function entryMarkup(work, platform, type) {
   const stats = platform === 'short' ? shortSideStats(work) :
-    work.type === '直播' ? liveStats(work) : shortStats(work);
+    work.types.includes('直播') ? liveStats(work) : shortStats(work, type);
   const date = work.period + '-' + String(work.day).padStart(2, '0');
   return `<button class="entry" data-id="${work.id}">
     <time datetime="${date}">${date.slice(5).replace('-', '/')}</time>
     <div><h3>${esc(work.title)}${work.commercial ? '<span class="badge">商单</span>' : ''}</h3>
       <p class="entry-credit">${esc(work.credit.replaceAll('/', ' · '))}</p></div>
-    <span class="entry-data"><span class="category">${esc(work.type)}</span><span class="entry-stats">${esc(stats || '—')}</span></span>
+    <span class="entry-data"><span class="category">${esc(work.types.join(' · '))}</span><span class="entry-stats">${esc(stats || '—')}</span></span>
     <span class="entry-action"><span class="link-availability">查看记录</span><span class="arrow" aria-hidden="true">↗</span></span>
   </button>`;
 }
 
 function render() {
-  const query = $('#search').value.trim().toLowerCase();
+  const terms = $('#search').value.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const type = $('#type').value;
   const platform = $('#platform').value;
   const commercial = $('#commercial').value;
-  const filtering = Boolean(month || query || type || platform || commercial);
+  const filtering = Boolean(month || terms.length || type || platform || commercial);
   const matches = works.filter(work => {
     if (month && work.period !== month) return false;
-    if (query && !(work.title + ' ' + work.credit).toLowerCase().includes(query)) return false;
-    if (type && work.type !== type) return false;
-    if (platform === 'short' && shortVideosFor(work).length === 0) return false;
+    if (!terms.every(term => work.searchText.includes(term))) return false;
+    if (type && !work.types.includes(type)) return false;
+    if (platform === 'short' && !shortVideosFor(work).length && !douyinFor(work).length) return false;
     if (platform === 'bilibili' && !hasBiliData(work)) return false;
     return !commercial || work.commercial === (commercial === 'yes');
   });
@@ -185,14 +210,14 @@ function render() {
   $('#entries').innerHTML = groups.map(({period, records}, index) => `
     <details class="archive-month" ${filtering || index === 0 ? 'open' : ''}>
       <summary class="month-heading">${periodLabel(period)} <span>${records.length} 项</span></summary>
-      ${records.map(work => entryMarkup(work, platform)).join('')}
+      ${records.map(work => entryMarkup(work, platform, type)).join('')}
     </details>`).join('') || '<p class="empty">没有找到匹配的作品。试试其他关键词，或重置筛选。</p>';
 }
 
-function linkLabel(url,w){return url.includes('/opus/')?'阅读图文':w.type==='直播'?'观看直播回放':'观看视频'}
+function linkLabel(url,w){return url.includes('/opus/')?'阅读图文':w.types.includes('直播')?'观看直播回放':'观看视频'}
 function linkAvailability(w){return w.links.length ? [...new Set(w.links.map(url=>url.includes('/opus/')?'图文':'视频'))].join(' / ')+' ↗' : '链接未收录'}
 function topic(w){return /黑旗/.test(w.title)?'黑旗':/PUBG/.test(w.title)?'PUBG':/消光困兽/.test(w.title)?'消光困兽':/红色沙漠/.test(w.title)?'红色沙漠':/11bit/.test(w.title)?'11bit':/ARC GAMES/.test(w.title)?'ARC GAMES':null}
-function detail(id){const w=works.find(w=>w.id===Number(id));if(!w)return;const key=topic(w),related=key?works.filter(x=>x.id!==w.id&&topic(x)===key):[];$('#detail-content').innerHTML=`<div class="detail-meta">${w.date} / ${esc(w.type)}${w.commercial?' / 商单':''}</div><h2 id="detail-title">${esc(w.title)}</h2><div class="work-links">${w.links.map(url=>`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${linkLabel(url,w)} <span aria-hidden="true">↗</span><small>哔哩哔哩 · 新标签页打开</small></a>`).join('')}</div>${douyinButtons(w)}<dl><dt>我的分工</dt><dd>${esc(w.credit.replaceAll('/',' · '))}</dd><dt>归档日期</dt><dd>${w.year} 年 ${w.month} 月 ${w.day} 日</dd></dl>${articlePanel(w)}${w.type==='直播'?livePanel(w):metadataPanel(w)+videoSheetPanel(w)}${shortVideosFor(w).length?shortVideoPanel(w):douyinPanel(w)}${related.length?`<div class="related"><h3>同一专题 · ${key}</h3>${related.map(x=>`<button data-id="${x.id}">${x.date} / ${esc(x.title)}<br><span>${esc(x.credit)}</span></button>`).join('')}</div>`:''}<p class="note">${w.links.length?'作品链接由档案作者提供。':(w.type==='直播'&&!liveFor(w).length?'此场直播暂未收录链接或统计数据。':'此项记录暂未收录作品链接。')}${w.title.includes('等待甲方')?'修改状态保留原清单记录。':''}</p>`;if(!$('#detail').open)$('#detail').showModal();$('#detail').scrollTop=0}
+function detail(id){const w=works.find(w=>w.id===Number(id));if(!w)return;const key=topic(w),related=key?works.filter(x=>x.id!==w.id&&topic(x)===key):[];$('#detail-content').innerHTML=`<div class="detail-meta">${w.date} / ${esc(w.types.join(' · '))}${w.commercial?' / 商单':''}</div><h2 id="detail-title">${esc(w.title)}</h2><div class="work-links">${w.links.map(url=>`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${linkLabel(url,w)} <span aria-hidden="true">↗</span><small>哔哩哔哩 · 新标签页打开</small></a>`).join('')}</div>${douyinButtons(w)}<dl><dt>我的分工</dt><dd>${esc(w.credit.replaceAll('/',' · '))}</dd><dt>归档日期</dt><dd>${w.year} 年 ${w.month} 月 ${w.day} 日</dd></dl>${articlePanel(w)}${w.types.includes('直播')?livePanel(w):metadataPanel(w)+videoSheetPanel(w)}${shortVideosFor(w).length?shortVideoPanel(w):douyinPanel(w)}${related.length?`<div class="related"><h3>同一专题 · ${key}</h3>${related.map(x=>`<button data-id="${x.id}">${x.date} / ${esc(x.title)}<br><span>${esc(x.credit)}</span></button>`).join('')}</div>`:''}<p class="note">${w.links.length?'作品链接由档案作者提供。':(w.types.includes('直播')&&!liveFor(w).length?'此场直播暂未收录链接或统计数据。':'此项记录暂未收录作品链接。')}${w.title.includes('等待甲方')?'修改状态保留原清单记录。':''}</p>`;if(!$('#detail').open)$('#detail').showModal();$('#detail').scrollTop=0}
 document.addEventListener('click',e=>{const work=e.target.closest('[data-id]');if(work)detail(work.dataset.id);const m=e.target.closest('[data-month]');if(m){month=m.dataset.month;document.querySelectorAll('[data-month]').forEach(b=>{b.classList.toggle('active',b===m);b.setAttribute('aria-pressed',String(b===m))});render()}});
 $('#search').addEventListener('input',render);['type','platform','commercial'].forEach(id=>$('#'+id).addEventListener('change',render));$('#reset').addEventListener('click',()=>{$('#search').value='';['type','platform','commercial'].forEach(id=>$('#'+id).value='');document.querySelector('[data-month=""]').click()});$('#close').addEventListener('click',()=>$('#detail').close());$('#detail').addEventListener('click',e=>{if(e.target===$('#detail')){const r=$('#detail').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('#detail').close()}});render();
 
