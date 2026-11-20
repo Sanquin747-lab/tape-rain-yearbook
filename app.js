@@ -3,15 +3,14 @@ const monthOrder = [...new Set(works.map(work => work.period))].reverse();
 const periodLabel = period => period.slice(0, 4) + ' 年 ' + Number(period.slice(5)) + ' 月';
 let month = '';
 const selected = [
-  { id: 37, title: '《红色沙漠》评测：我通关了，但我好像只玩了三分之一？' },
-  { id: 47, title: '《新月同行》美术设定集' },
-  { id: 15, title: '海信电视双十一体验' },
+  { id: 37, title: '《红色沙漠》评测' },
+  { personalUrl: 'https://www.bilibili.com/video/BV1WJJpzqETV/', cover: 'covers/BV1WJJpzqETV.jpg' },
+  { id: 47, title: '新月的回忆珍藏于此!《新月同行美术设定集》' },
   { id: 64, title: '不出正作的《恶魔城》，日子居然越来越好了？' },
   { id: 55, title: '《刺客信条：黑旗 记忆重置》制作人采访' },
   { id: 75, title: '《游戏机实用技术》开箱' }
 ];
 const number=n=>Number(n).toLocaleString('zh-CN');
-const compact=n=>n>=10000?(n/10000).toFixed(1)+' 万':number(n);
 function sourceFor(w){return w.links.map(url=>workMetadata[url]).find(m=>m?.status==='ok'&&m.kind==='video')||w.links.map(url=>workMetadata[url]).find(m=>m?.status==='ok')}
 function videoRowsFor(work) {
   return videoSheetData.rows.filter(row => row.workIds.includes(work.id));
@@ -98,21 +97,36 @@ $('.combined-summary p').remove();
 $('.combined-summary small').textContent='B站视频播放、短视频播放、直播观看与文章阅读合计。按作品及平台累计，同一作品多项分工只计一次。非独立访客数。';
 
 $('#total').textContent=works.length;
-function featureCard(item, index) {
+function featureCard(item) {
   const work = works.find(entry => entry.id === item.id);
-  const source = sourceFor(work);
-  const ranking = index < 3 ? `首年播放第 ${index + 1} 名` : work.type;
-  const views = index < 3 && source?.stats?.view != null
-    ? `<b>${compact(source.stats.view)} 播放</b>` : '';
-  return `<button class="feature" data-id="${work.id}">
-    <div class="cover has-image"><img src="${esc(source.localCover)}" alt="" loading="lazy"></div>
-    <div class="feature-meta"><span>${esc(ranking)}</span>${views}</div>
-    <h3>${esc(item.title)}</h3>
-    <p class="feature-credit"><span>参与</span>${esc(work.credit.replaceAll('/', ' · '))}</p>
-  </button>`;
+  const personal = item.personalUrl && personalAccount.videos.find(video => video.url === item.personalUrl);
+  const cover = work ? sourceFor(work).localCover : item.cover;
+  const title = work ? item.title : personal.title;
+  const content = `<div class="cover has-image"><img src="${esc(cover)}" alt="" loading="lazy"></div>
+    <div class="feature-meta">${work ? esc(work.type) : '个人视频'}</div>
+    <h3>${esc(title)}</h3>
+    <p class="feature-credit">${work ? '<span>参与</span>' + esc(work.credit.replaceAll('/', ' · ')) : esc(personalAccount.name) + ' · B站个人账号 ↗'}</p>`;
+  if (personal) return `<a class="feature" href="${esc(personal.url)}" target="_blank" rel="noopener noreferrer">${content}</a>`;
+  return `<button class="feature" data-id="${work.id}">${content}</button>`;
 }
 
 $('#features').innerHTML = selected.map(featureCard).join('');
+const typeCounts = new Map();
+for (const work of works) {
+  typeCounts.set(work.type, (typeCounts.get(work.type) || 0) + 1);
+}
+const contentsOrder = new Set(['评测与试玩', '采访', '视频', '图文', '直播', '策划与其他', ...typeCounts.keys()]);
+$('#contents-list').innerHTML = [...contentsOrder].filter(type => typeCounts.has(type)).map(type =>
+  `<li><a href="#catalog" data-contents-type="${esc(type)}"><span>${esc(type)}</span><span class="contents-count">${typeCounts.get(type)}</span><span class="contents-arrow" aria-hidden="true">↘</span></a></li>`
+).join('');
+$('#contents-list').addEventListener('click', event => {
+  const link = event.target.closest('[data-contents-type]');
+  if (!link) return;
+  $('#reset').click();
+  $('#type').value = link.dataset.contentsType;
+  render();
+  $('#type').focus({preventScroll:true});
+});
 for (const type of new Set(works.map(work => work.type))) {
   $('#type').add(new Option(type, type));
 }
